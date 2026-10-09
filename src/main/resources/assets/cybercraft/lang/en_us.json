@@ -1,0 +1,6 @@
+{
+  "item.cybercraft.cyberdeck": "Cyberdeck",
+  "quickhack.cybercraft.short_circuit": "Short Circuit",
+  "death.attack.cybercraft.short_circuit": "%1$s suffered a fatal system overload from %2$s",
+  "death.attack.cybercraft.short_circuit.item": "%1$s was short-circuited by %2$s using %3$s"
+}

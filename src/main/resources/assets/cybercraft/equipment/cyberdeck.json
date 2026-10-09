@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "cybercraft:cyberdeck"
+      }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "cybercraft:cyberdeck"
+      }
+    ]
+  }
+}

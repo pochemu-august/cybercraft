@@ -1,0 +1,6 @@
+{
+  "item.cybercraft.cyberdeck": "Кибердека",
+  "quickhack.cybercraft.short_circuit": "Короткое замыкание",
+  "death.attack.cybercraft.short_circuit": "%1$s получил летальный электрический пробой от %2$s",
+  "death.attack.cybercraft.short_circuit.item": "%1$s был поджарен %2$s с помощью %3$s"
+}
