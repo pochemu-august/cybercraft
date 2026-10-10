@@ -3,15 +3,15 @@
 	"id": "cybercraft",
 	"version": "${version}",
 	"name": "Cybercraft",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Cyberpunk netrunning mod for Fabric Loader: neuro-visors, scanning HUD, ICE protocols, and remote quickhacks.",
 	"authors": [
-		"Me!"
+		"augustuz"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/augustuz/cybercraft",
+		"sources": "https://github.com/augustuz/cybercraft"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/cybercraft/icon.png",
 	"environment": "*",
 	"entrypoints": {

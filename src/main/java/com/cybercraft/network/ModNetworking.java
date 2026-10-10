@@ -4,9 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -16,8 +14,6 @@ import com.cybercraft.hack.HackTarget;
 import com.cybercraft.hack.Quickhack;
 import com.cybercraft.hack.QuickhackRegistry;
 import com.cybercraft.item.CyberdeckItem;
-import com.cybercraft.item.component.CyberdeckSpec;
-import com.cybercraft.registry.ModItems;
 import com.cybercraft.util.NetrunnerRaycast;
 
 /**
@@ -43,77 +39,92 @@ public final class ModNetworking {
 	}
 
 	private static void handleExecuteHack(ExecuteHackPayload payload, ServerPlayNetworking.Context context) {
-		ServerPlayer player = context.player();
-
-		// 1. Строгая проверка слота HEAD: визор ОБЯЗАТЕЛЕН на голове
-		ItemStack headStack = player.getItemBySlot(EquipmentSlot.HEAD);
-		if (!headStack.is(ModItems.CYBERDECK)) {
-			player.sendSystemMessage(
-					Component.literal("[ICE Alert] Нейроинтерфейс не подключен!").withStyle(ChatFormatting.RED),
-					true
-			);
+		// Базовая валидация пакета от сетевого слоя
+		if (payload == null || payload.hackId() == null || payload.target() == null) {
 			return;
 		}
 
-		CyberdeckSpec spec = CyberdeckItem.getSpec(headStack);
+		// Безопасное перенаправление в главный серверный поток (Thread Safety)
+		context.server().execute(() -> {
+			ServerPlayer player = context.player();
+			if (player == null || player.isRemoved() || !player.isAlive()) {
+				return;
+			}
 
-		// 2. Валидация скрипта в реестре
-		Quickhack hack = QuickhackRegistry.get(payload.hackId());
-		if (hack == null) {
-			Cybercraft.LOGGER.warn("Player {} attempted to execute unknown quickhack: {}", player.getName().getString(), payload.hackId());
-			return;
-		}
-
-		// 3. Валидация цели
-		HackTarget target = payload.target();
-		if (target.type() == HackTarget.TargetType.ENTITY) {
-			Entity rawEntity = target.resolveEntity(player.level());
-			if (!(rawEntity instanceof LivingEntity livingTarget) || !livingTarget.isAlive()) {
+			// 1. Строгая проверка слота HEAD: визор ОБЯЗАТЕЛЕН на голове
+			if (!CyberdeckItem.isEquipped(player)) {
 				player.sendSystemMessage(
-						Component.literal("[ICE Alert] Target lost or invalid!").withStyle(ChatFormatting.RED),
+						Component.literal("[ICE Alert] Нейроинтерфейс не подключен!").withStyle(ChatFormatting.RED),
 						true
 				);
 				return;
 			}
 
-			// 4. Серверная проверка дистанции (защита от читов, не более MAX_REACH = 20 блоков)
-			double distanceSq = player.distanceToSqr(livingTarget.position());
-			if (distanceSq > NetrunnerRaycast.MAX_REACH * NetrunnerRaycast.MAX_REACH) {
-				player.sendSystemMessage(
-						Component.literal("[ICE Alert] Target out of range!").withStyle(ChatFormatting.RED),
-						true
-				);
+			// 2. Валидация скрипта в реестре
+			Quickhack hack = QuickhackRegistry.get(payload.hackId());
+			if (hack == null) {
+				Cybercraft.LOGGER.warn("Player {} attempted to execute unknown quickhack: {}", player.getName().getString(), payload.hackId());
 				return;
 			}
 
-			// 5. Проверка линии видимости (Line of sight)
-			if (!player.hasLineOfSight(livingTarget)) {
-				player.sendSystemMessage(
-						Component.literal("[ICE Alert] Line of sight obstructed!").withStyle(ChatFormatting.RED),
-						true
-				);
-				return;
-			}
+			// 3. Валидация цели
+			HackTarget target = payload.target();
+			if (target.type() == HackTarget.TargetType.ENTITY) {
+				int entityId = target.entityId();
 
-			// 6. Проверка совместимости моба с протоколом
-			if (!hack.canTargetEntity(livingTarget)) {
-				player.sendSystemMessage(
-						Component.literal("[ICE Alert] Target immune to this protocol!").withStyle(ChatFormatting.RED),
-						true
-				);
-				return;
-			}
+				// Валидация ID: отсекаем некорректные идентификаторы и попытку взломать самого себя
+				if (entityId <= 0 || entityId == player.getId()) {
+					return;
+				}
 
-			// 7. Выполнение скрипта
-			boolean success = hack.executeOnEntity(player, livingTarget);
-			if (success) {
-				player.sendSystemMessage(
-						Component.literal("[Upload Complete] ")
-								.withStyle(ChatFormatting.AQUA)
-								.append(hack.displayName().copy().withStyle(ChatFormatting.GREEN)),
-						true
-				);
+				Entity rawEntity = target.resolveEntity(player.level());
+				if (!(rawEntity instanceof LivingEntity livingTarget) || livingTarget.isRemoved() || !livingTarget.isAlive()) {
+					player.sendSystemMessage(
+							Component.literal("[ICE Alert] Target lost or invalid!").withStyle(ChatFormatting.RED),
+							true
+					);
+					return;
+				}
+
+				// 4. Серверная проверка дистанции (защита от читов, не более MAX_REACH = 20 блоков)
+				double distanceSq = player.distanceToSqr(livingTarget.position());
+				if (distanceSq > NetrunnerRaycast.MAX_REACH * NetrunnerRaycast.MAX_REACH) {
+					player.sendSystemMessage(
+							Component.literal("[ICE Alert] Target out of range!").withStyle(ChatFormatting.RED),
+							true
+					);
+					return;
+				}
+
+				// 5. Проверка линии видимости (Line of sight)
+				if (!player.hasLineOfSight(livingTarget)) {
+					player.sendSystemMessage(
+							Component.literal("[ICE Alert] Line of sight obstructed!").withStyle(ChatFormatting.RED),
+							true
+					);
+					return;
+				}
+
+				// 6. Проверка совместимости моба с протоколом
+				if (!hack.canTargetEntity(livingTarget)) {
+					player.sendSystemMessage(
+							Component.literal("[ICE Alert] Target immune to this protocol!").withStyle(ChatFormatting.RED),
+							true
+					);
+					return;
+				}
+
+				// 7. Выполнение скрипта
+				boolean success = hack.executeOnEntity(player, livingTarget);
+				if (success) {
+					player.sendSystemMessage(
+							Component.literal("[Upload Complete] ")
+									.withStyle(ChatFormatting.AQUA)
+									.append(hack.displayName().copy().withStyle(ChatFormatting.GREEN)),
+							true
+					);
+				}
 			}
-		}
+		});
 	}
 }

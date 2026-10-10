@@ -6,8 +6,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.phys.EntityHitResult;
-import net.minecraft.world.phys.HitResult;
 
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -18,6 +16,7 @@ import com.cybercraft.client.scanner.ScannerManager;
 /**
  * Оверлей HUD сканера визора.
  * Отрисовывается только тогда, когда активен режим сканирования с надетого нейровизора.
+ * Использует закэшированную цель из {@link ScannerManager}, не выполняя тяжелый рейкаст в кадре рендеринга.
  */
 public class ScannerHudOverlay implements HudElement {
 
@@ -75,9 +74,9 @@ public class ScannerHudOverlay implements HudElement {
 		// Верхний статус визора
 		extractor.centeredText(font, Component.literal("[NEURO-VISOR // SCANNING]"), cx, cy - bracketSize - 14, 0xFF00F0FF);
 
-		// 2. Данные о цели под перекрестием
-		HitResult hit = ScannerManager.getCurrentHit();
-		if (hit instanceof EntityHitResult entityHit && entityHit.getEntity() instanceof LivingEntity target) {
+		// 2. Данные о цели под перекрестием (из кэша менеджера сканирования)
+		LivingEntity target = ScannerManager.getTargetEntity();
+		if (target != null && target.isAlive()) {
 			int panelW = 140;
 			int panelH = 42;
 			int panelX = cx - panelW / 2;
