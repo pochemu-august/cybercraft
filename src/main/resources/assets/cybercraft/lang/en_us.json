@@ -1,5 +1,9 @@
 {
-  "item.cybercraft.cyberdeck": "Cyberdeck",
+  "item.cybercraft.cyberdeck": "Neuro-Visor",
+  "key.cybercraft.scan": "Neuro-Visor Scanner",
+  "key.cybercraft.execute_hack": "Execute Quickhack",
+  "key.category.cybercraft.main": "Cybercraft",
+  "key.categories.cybercraft": "Cybercraft",
   "quickhack.cybercraft.short_circuit": "Short Circuit",
   "death.attack.cybercraft.short_circuit": "%1$s suffered a fatal system overload from %2$s",
   "death.attack.cybercraft.short_circuit.item": "%1$s was short-circuited by %2$s using %3$s"

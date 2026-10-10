@@ -1,5 +1,9 @@
 {
-  "item.cybercraft.cyberdeck": "Кибердека",
+  "item.cybercraft.cyberdeck": "Нейровизор",
+  "key.cybercraft.scan": "Сканер нейровизора",
+  "key.cybercraft.execute_hack": "Применить быстрый взлом",
+  "key.category.cybercraft.main": "Cybercraft",
+  "key.categories.cybercraft": "Cybercraft",
   "quickhack.cybercraft.short_circuit": "Короткое замыкание",
   "death.attack.cybercraft.short_circuit": "%1$s получил летальный электрический пробой от %2$s",
   "death.attack.cybercraft.short_circuit.item": "%1$s был поджарен %2$s с помощью %3$s"

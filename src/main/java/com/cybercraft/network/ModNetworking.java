@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
@@ -16,6 +17,7 @@ import com.cybercraft.hack.Quickhack;
 import com.cybercraft.hack.QuickhackRegistry;
 import com.cybercraft.item.CyberdeckItem;
 import com.cybercraft.item.component.CyberdeckSpec;
+import com.cybercraft.registry.ModItems;
 import com.cybercraft.util.NetrunnerRaycast;
 
 /**
@@ -43,18 +45,17 @@ public final class ModNetworking {
 	private static void handleExecuteHack(ExecuteHackPayload payload, ServerPlayNetworking.Context context) {
 		ServerPlayer player = context.player();
 
-		// 1. Проверяем наличие экипированной кибердеки (на голове в слоте HEAD или в руках)
-		ItemStack deckStack = CyberdeckItem.getEquippedCyberdeck(player);
-
-		if (deckStack.isEmpty()) {
+		// 1. Строгая проверка слота HEAD: визор ОБЯЗАТЕЛЕН на голове
+		ItemStack headStack = player.getItemBySlot(EquipmentSlot.HEAD);
+		if (!headStack.is(ModItems.CYBERDECK)) {
 			player.sendSystemMessage(
-					Component.literal("[ICE Alert] Cyberdeck / Neuro-Visor not equipped!").withStyle(ChatFormatting.RED),
+					Component.literal("[ICE Alert] Нейроинтерфейс не подключен!").withStyle(ChatFormatting.RED),
 					true
 			);
 			return;
 		}
 
-		CyberdeckSpec spec = CyberdeckItem.getSpec(deckStack);
+		CyberdeckSpec spec = CyberdeckItem.getSpec(headStack);
 
 		// 2. Валидация скрипта в реестре
 		Quickhack hack = QuickhackRegistry.get(payload.hackId());
@@ -75,7 +76,7 @@ public final class ModNetworking {
 				return;
 			}
 
-			// 4. Серверная проверка дистанции (защита от читов, не более MAX_REACH)
+			// 4. Серверная проверка дистанции (защита от читов, не более MAX_REACH = 20 блоков)
 			double distanceSq = player.distanceToSqr(livingTarget.position());
 			if (distanceSq > NetrunnerRaycast.MAX_REACH * NetrunnerRaycast.MAX_REACH) {
 				player.sendSystemMessage(
@@ -94,7 +95,7 @@ public final class ModNetworking {
 				return;
 			}
 
-			// 6. Проверка совместимости моба с хаком
+			// 6. Проверка совместимости моба с протоколом
 			if (!hack.canTargetEntity(livingTarget)) {
 				player.sendSystemMessage(
 						Component.literal("[ICE Alert] Target immune to this protocol!").withStyle(ChatFormatting.RED),
